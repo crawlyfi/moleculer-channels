@@ -171,6 +171,11 @@ class NatsAdapter extends BaseAdapter {
 		if (chan.maxRetries == null) chan.maxRetries = this.opts.maxRetries;
 
 		chan.deadLettering = _.defaultsDeep({}, chan.deadLettering, this.opts.deadLettering);
+		chan.customDeadLettering = _.defaultsDeep(
+			{},
+			chan.customDeadLettering,
+			this.opts.customDeadLettering
+		);
 		if (chan.deadLettering.enabled) {
 			chan.deadLettering.queueName = this.addPrefixTopic(chan.deadLettering.queueName);
 		}
@@ -259,7 +264,8 @@ class NatsAdapter extends BaseAdapter {
 					);
 					message.ack();
 				} catch (error) {
-					// this.logger.error(error);
+					//  this.logger.error(chan);
+
 					this.metricsIncrement(C.METRIC_CHANNELS_MESSAGES_ERRORS_TOTAL, chan);
 
 					// Message rejected
@@ -271,6 +277,14 @@ class NatsAdapter extends BaseAdapter {
 								`No retries, moving message to '${chan.deadLettering.queueName}' queue...`
 							);
 							await this.moveToDeadLetter(chan, message);
+						} else if (chan.customDeadLettering.enabled) {
+							chan.customDeadLettering.function(
+								this.broker,
+								this.serializer.deserialize(Buffer.from(message.data)),
+								error.message,
+								error.stack
+							);
+							// this.logger.error("Custom dead lettering");
 						} else {
 							// Drop message
 							this.logger.error(`No retries, drop message...`, message.seq);
@@ -288,6 +302,14 @@ class NatsAdapter extends BaseAdapter {
 								`Message redelivered too many times (${message.info.redeliveryCount}). Moving message to '${chan.deadLettering.queueName}' queue...`
 							);
 							await this.moveToDeadLetter(chan, message);
+						} else if (chan.customDeadLettering.enabled) {
+							chan.customDeadLettering.function(
+								this.broker,
+								chan,
+								this.serializer.deserialize(Buffer.from(message.data)),
+								error.message,
+								error.stack
+							);
 						} else {
 							// Drop message
 							this.logger.error(

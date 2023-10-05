@@ -19,7 +19,9 @@ const C = require("../constants");
  * @typedef {import("moleculer").Serializer} Serializer Moleculer Serializer
  * @typedef {import("../index").Channel} Channel Base channel definition
  * @typedef {import("../index").DeadLetteringOptions} DeadLetteringOptions Dead-letter-queue options
+ * @typedef {import("../index").CustomDeadLetteringOptions} CustomDeadLetteringOptions Dead-letter-queue options
  */
+
 
 /**
  * @typedef {Object} BaseDefaultOptions Base Adapter configuration
@@ -29,6 +31,8 @@ const C = require("../constants");
  * @property {Number} maxRetries Maximum number of retries before sending the message to dead-letter-queue or drop
  * @property {Number} maxInFlight Maximum number of messages that can be processed in parallel.
  * @property {DeadLetteringOptions} deadLettering Dead-letter-queue options
+ * @property {CustomDeadLetteringOptions} customDeadLettering Custom Dead-letter-queue options
+
  */
 
 class BaseAdapter {
@@ -46,7 +50,13 @@ class BaseAdapter {
 			maxInFlight: 1,
 			deadLettering: {
 				enabled: false,
-				queueName: "FAILED_MESSAGES"
+				queueName: "FAILED_MESSAGESs"
+			},
+			customDeadLettering: {
+				enabled: false,
+				function: () => {
+					throw new MoleculerError("Custom dead-lettering function is not implemented");
+				}
 			}
 		});
 
