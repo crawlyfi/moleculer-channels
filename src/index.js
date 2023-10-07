@@ -47,6 +47,7 @@ const C = require("./constants");
  * @property {DeadLetteringOptions?} deadLettering Dead-letter-queue options
  * @property {CustomDeadLetteringOptions?} customDeadLettering Custom Dead-letter-queue options
  * @property {Function} handler User defined handler
+ * @property {Object} params User defined handler
  */
 
 /**
@@ -755,6 +756,11 @@ module.exports = function ChannelsCrawlyfiMiddleware(mwOpts) {
 										throw err;
 									});
 							};
+						}
+
+						// Add params to channel
+						if (def.params) {
+							chan.params = def.params;
 						}
 
 						//svc.$channels[name] = chan;

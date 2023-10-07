@@ -9,6 +9,7 @@
 const BaseAdapter = require("./base");
 const _ = require("lodash");
 const C = require("../constants");
+const Moleculer = require("moleculer");
 const { MoleculerRetryableError } = require("moleculer").Errors;
 
 let NATS;
@@ -170,6 +171,7 @@ class NatsAdapter extends BaseAdapter {
 		if (chan.maxInFlight == null) chan.maxInFlight = this.opts.maxInFlight;
 		if (chan.maxRetries == null) chan.maxRetries = this.opts.maxRetries;
 
+		chan.params = _.defaultsDeep({}, chan.params, this.opts.params);
 		chan.deadLettering = _.defaultsDeep({}, chan.deadLettering, this.opts.deadLettering);
 		chan.customDeadLettering = _.defaultsDeep(
 			{},
@@ -255,9 +257,25 @@ class NatsAdapter extends BaseAdapter {
 			if (message) {
 				this.addChannelActiveMessages(chan.id, [message.seq]);
 
+				// Validation for message if chan.params exists and has a value
+				if (chan.params && Object.keys(chan.params).length > 0) {
+					try {
+						const Validator = require("moleculer").Validator;
+						const fastestValidator = new Validator();
+						const event = this.serializer.deserialize(Buffer.from(message.data));
+						fastestValidator.validate(event.data, chan.params);
+					} catch (error) {
+						this.logger.error(error);
+					}
+				}
+
 				try {
 					// Working on the message and thus prevent receiving the message again as a redelivery.
+
 					message.working();
+
+					this.logger.info(chan);
+
 					await chan.handler(
 						this.serializer.deserialize(Buffer.from(message.data)),
 						message
@@ -271,7 +289,6 @@ class NatsAdapter extends BaseAdapter {
 					// Message rejected
 					if (!chan.maxRetries) {
 						// No retries
-
 						if (chan.deadLettering.enabled) {
 							this.logger.debug(
 								`No retries, moving message to '${chan.deadLettering.queueName}' queue...`

@@ -22,7 +22,6 @@ const C = require("../constants");
  * @typedef {import("../index").CustomDeadLetteringOptions} CustomDeadLetteringOptions Dead-letter-queue options
  */
 
-
 /**
  * @typedef {Object} BaseDefaultOptions Base Adapter configuration
  * @property {String?} prefix Adapter prefix
@@ -32,6 +31,7 @@ const C = require("../constants");
  * @property {Number} maxInFlight Maximum number of messages that can be processed in parallel.
  * @property {DeadLetteringOptions} deadLettering Dead-letter-queue options
  * @property {CustomDeadLetteringOptions} customDeadLettering Custom Dead-letter-queue options
+ * @property {Object} params Custom Dead-letter-queue options
 
  */
 
@@ -57,7 +57,8 @@ class BaseAdapter {
 				function: () => {
 					throw new MoleculerError("Custom dead-lettering function is not implemented");
 				}
-			}
+			},
+			params: undefined
 		});
 
 		/**
