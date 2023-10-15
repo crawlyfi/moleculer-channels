@@ -1,9 +1,10 @@
 {
-  "name": "@moleculer/channels",
+  "name": "@crawlyfi/moleculer-channels",
   "version": "0.1.8",
   "description": "Reliable messages for Moleculer services",
   "main": "index.js",
   "scripts": {
+    "build": "rm -R ./dist || true && tsc --project tsconfig.build.json",
     "dev": "nodemon examples/index.js",
     "check": "tsc --noEmit true",
     "types": "tsc --emitDeclarationOnly true --noEmitOnError false",

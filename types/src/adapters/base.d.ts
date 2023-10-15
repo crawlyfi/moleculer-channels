@@ -6,6 +6,7 @@ export = BaseAdapter;
  * @typedef {import("moleculer").Serializer} Serializer Moleculer Serializer
  * @typedef {import("../index").Channel} Channel Base channel definition
  * @typedef {import("../index").DeadLetteringOptions} DeadLetteringOptions Dead-letter-queue options
+ * @typedef {import("../index").CustomDeadLetteringOptions} CustomDeadLetteringOptions Dead-letter-queue options
  */
 /**
  * @typedef {Object} BaseDefaultOptions Base Adapter configuration
@@ -15,6 +16,9 @@ export = BaseAdapter;
  * @property {Number} maxRetries Maximum number of retries before sending the message to dead-letter-queue or drop
  * @property {Number} maxInFlight Maximum number of messages that can be processed in parallel.
  * @property {DeadLetteringOptions} deadLettering Dead-letter-queue options
+ * @property {CustomDeadLetteringOptions} customDeadLettering Custom Dead-letter-queue options
+ * @property {Object} params Custom Dead-letter-queue options
+
  */
 declare class BaseAdapter {
     /**
@@ -141,7 +145,7 @@ declare class BaseAdapter {
     parseMessageHeaders(raw: any): object;
 }
 declare namespace BaseAdapter {
-    export { ServiceBroker, Service, Logger, Serializer, Channel, DeadLetteringOptions, BaseDefaultOptions };
+    export { ServiceBroker, Service, Logger, Serializer, Channel, DeadLetteringOptions, CustomDeadLetteringOptions, BaseDefaultOptions };
 }
 /**
  * Base Adapter configuration
@@ -171,6 +175,14 @@ type BaseDefaultOptions = {
      * Dead-letter-queue options
      */
     deadLettering: DeadLetteringOptions;
+    /**
+     * Custom Dead-letter-queue options
+     */
+    customDeadLettering: CustomDeadLetteringOptions;
+    /**
+     * Custom Dead-letter-queue options
+     */
+    params: any;
 };
 /**
  * Moleculer Service Broker instance
@@ -196,3 +208,7 @@ type Service = import("moleculer").Service;
  * Dead-letter-queue options
  */
 type DeadLetteringOptions = import("../index").DeadLetteringOptions;
+/**
+ * Dead-letter-queue options
+ */
+type CustomDeadLetteringOptions = import("../index").CustomDeadLetteringOptions;

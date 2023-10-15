@@ -1,4 +1,4 @@
-declare function _exports(mwOpts: MiddlewareOptions): {
+declare const _exports: ((mwOpts: MiddlewareOptions) => {
     name: string;
     /**
      * Create lifecycle hook of service
@@ -26,7 +26,35 @@ declare function _exports(mwOpts: MiddlewareOptions): {
      * Stop lifecycle hook of service
      */
     stopped(): Promise<void>;
-};
+}) | ((mwOpts: any) => {
+    name: string;
+    /**
+     * Create lifecycle hook of service
+     * @param {ServiceBroker} _broker
+     */
+    created(_broker: ServiceBroker): void;
+    /**
+     * Created lifecycle hook of service
+     *
+     * @param {Service} svc
+     */
+    serviceCreated(svc: Service): Promise<void>;
+    /**
+     * Service stopping lifecycle hook.
+     * Need to unsubscribe from the channels.
+     *
+     * @param {Service} svc
+     */
+    serviceStopping(svc: Service): Promise<void>;
+    /**
+     * Start lifecycle hook of service
+     */
+    started(): Promise<void>;
+    /**
+     * Stop lifecycle hook of service
+     */
+    stopped(): Promise<void>;
+});
 export = _exports;
 /**
  * Moleculer Service Broker instance
@@ -74,6 +102,19 @@ export type DeadLetteringOptions = {
     queueOptions: any;
 };
 /**
+ * Custom Dead-letter-queue options
+ */
+export type CustomDeadLetteringOptions = {
+    /**
+     * Enable dead-letter-queue
+     */
+    enabled: boolean;
+    /**
+     * Enable dead-letter-queue
+     */
+    function: Function;
+};
+/**
  * Base consumer configuration
  */
 export type Channel = {
@@ -110,9 +151,17 @@ export type Channel = {
      */
     deadLettering: DeadLetteringOptions | null;
     /**
+     * Custom Dead-letter-queue options
+     */
+    customDeadLettering: CustomDeadLetteringOptions | null;
+    /**
      * User defined handler
      */
     handler: Function;
+    /**
+     * User defined handler
+     */
+    params: any;
 };
 /**
  * Registry entry
