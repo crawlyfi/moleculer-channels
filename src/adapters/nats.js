@@ -62,12 +62,15 @@ class NatsAdapter extends BaseAdapter {
 		this.opts = _.defaultsDeep(this.opts, {
 			nats: {
 				/** @type {ConnectionOptions} */
-				connectionOptions: {},
+				connectionOptions: {
+					reconnectTimeWait: parseInt(process.env.NATS_RECONNECT_TIME_WAIT) || 2000
+				},
 				/** @type {Partial<StreamConfig>} More info: https://docs.nats.io/jetstream/concepts/streams */
 				streamConfig: {},
 				/** @type {ConsumerOpts} More info: https://docs.nats.io/jetstream/concepts/consumers */
 				consumerOptions: {
 					// Manual ACK
+
 					mack: true,
 					config: {
 						// More info: https://docs.nats.io/jetstream/concepts/consumers#deliverpolicy-optstartseq-optstarttime
