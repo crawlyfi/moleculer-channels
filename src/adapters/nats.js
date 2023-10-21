@@ -277,8 +277,6 @@ class NatsAdapter extends BaseAdapter {
 
 					message.working();
 
-					this.logger.info(chan);
-
 					await chan.handler(
 						this.serializer.deserialize(Buffer.from(message.data)),
 						message
@@ -291,23 +289,25 @@ class NatsAdapter extends BaseAdapter {
 
 					// Message rejected
 					if (!chan.maxRetries) {
+						if (chan.customDeadLettering && chan.customDeadLettering.enabled) {
+							await chan.customDeadLettering.function(
+								this.broker,
+								message.headers,
+								this.serializer.deserialize(Buffer.from(message.data)),
+								error.message,
+								error.stack
+							);
+						}
+
 						// No retries
 						if (chan.deadLettering.enabled) {
 							this.logger.debug(
 								`No retries, moving message to '${chan.deadLettering.queueName}' queue...`
 							);
 							await this.moveToDeadLetter(chan, message);
-						} else if (chan.customDeadLettering.enabled) {
-							chan.customDeadLettering.function(
-								this.broker,
-								this.serializer.deserialize(Buffer.from(message.data)),
-								error.message,
-								error.stack
-							);
-							// this.logger.error("Custom dead lettering");
 						} else {
 							// Drop message
-							this.logger.error(`No retries, drop message...`, message.seq);
+							// this.logger.error(`No retries, drop message...`, message.seq);
 						}
 
 						message.ack();
@@ -316,20 +316,20 @@ class NatsAdapter extends BaseAdapter {
 						message.info.redeliveryCount >= chan.maxRetries
 					) {
 						// Retries enabled and limit reached
-
+						if (chan.customDeadLettering && chan.customDeadLettering.enabled) {
+							await chan.customDeadLettering.function(
+								this.broker,
+								message.headers,
+								this.serializer.deserialize(Buffer.from(message.data)),
+								error.message,
+								error.stack
+							);
+						}
 						if (chan.deadLettering.enabled) {
 							this.logger.debug(
 								`Message redelivered too many times (${message.info.redeliveryCount}). Moving message to '${chan.deadLettering.queueName}' queue...`
 							);
 							await this.moveToDeadLetter(chan, message);
-						} else if (chan.customDeadLettering.enabled) {
-							chan.customDeadLettering.function(
-								this.broker,
-								chan,
-								this.serializer.deserialize(Buffer.from(message.data)),
-								error.message,
-								error.stack
-							);
 						} else {
 							// Drop message
 							this.logger.error(

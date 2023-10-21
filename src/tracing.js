@@ -85,7 +85,7 @@ module.exports = function TracingMiddleware() {
 					type: "channel",
 					traceID: ctx.requestID,
 					parentID: ctx.parentID,
-					service: ctx.service,
+					service: chan.group,
 					sampled: ctx.tracing,
 					tags
 				});
