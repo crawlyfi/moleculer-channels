@@ -189,9 +189,7 @@ class NatsAdapter extends BaseAdapter {
 		// NATS Stream name does not support: spaces, tabs, period (.), greater than (>) or asterisk (*) are prohibited.
 		// More info: https://docs.nats.io/jetstream/administration/naming
 		const streamName = chan.name.split(".").join("_");
-		await this.createStream(streamName, [chan.name], chan.nats ? chan.nats.streamConfig + {
-			max_age: "48h",
-		} : {});
+		await this.createStream(streamName, [chan.name], chan.nats ? chan.nats.streamConfig : {});
 
 		if (chan.deadLettering && chan.deadLettering.enabled) {
 			const deadLetteringStreamName = chan.deadLettering.queueName.split(".").join("_");
@@ -366,7 +364,11 @@ class NatsAdapter extends BaseAdapter {
 	 * @param {Array<String>} subjects A list of subjects/topics to store in a stream
 	 * @param {StreamConfig} streamOpts JetStream stream configs
 	 */
-	async createStream(streamName, subjects, streamOpts) {
+	async createStream(streamName, subjects, streamOptsParam) {
+		let streamOpts = {
+			... streamOptsParam,
+			max_age: 86400000000000,
+		}
 		const streamConfig = _.defaultsDeep(
 			{
 				name:
@@ -387,7 +389,8 @@ class NatsAdapter extends BaseAdapter {
 						this.opts.nats.streamConfig && this.opts.nats.streamConfig.subjects
 						? this.opts.nats.streamConfig.subjects
 						: // Default
-						  subjects
+						  subjects,
+						  
 			},
 			streamOpts,
 			this.opts.nats.streamConfig
@@ -398,10 +401,13 @@ class NatsAdapter extends BaseAdapter {
 			this.logger.debug("streamInfo:", streamInfo);
 			return streamInfo;
 		} catch (error) {
-			if (error.message === "stream name already in use") {
+			if (error.message === 'stream name already in use with a different configuration') {
 				// Silently ignore the error. Channel or Consumer Group already exists
 				this.logger.debug(`NATS Stream with name: '${streamName}' already exists.`);
-			} else {
+			} else if (error.message === "consumer name already in use") { 
+				this.logger.debug(`NATS Stream with name: '${streamName}' already exists with a different configuration`);
+			}
+			else {
 				this.logger.error("An error ocurred while create NATS Stream", error);
 			}
 		}
