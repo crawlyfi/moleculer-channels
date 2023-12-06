@@ -189,7 +189,9 @@ class NatsAdapter extends BaseAdapter {
 		// NATS Stream name does not support: spaces, tabs, period (.), greater than (>) or asterisk (*) are prohibited.
 		// More info: https://docs.nats.io/jetstream/administration/naming
 		const streamName = chan.name.split(".").join("_");
-		await this.createStream(streamName, [chan.name], chan.nats ? chan.nats.streamConfig : {});
+		await this.createStream(streamName, [chan.name], chan.nats ? chan.nats.streamConfig : {
+			max_age: "48h",
+		});
 
 		if (chan.deadLettering && chan.deadLettering.enabled) {
 			const deadLetteringStreamName = chan.deadLettering.queueName.split(".").join("_");
