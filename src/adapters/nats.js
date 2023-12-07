@@ -365,10 +365,12 @@ class NatsAdapter extends BaseAdapter {
 	 * @param {StreamConfig} streamOpts JetStream stream configs
 	 */
 	async createStream(streamName, subjects, streamOptsParam) {
-		let streamOpts = {
+		let streamOptsv2 = {
 			... streamOptsParam,
 			max_age: 86400000000000,
 		}
+		let streamOpts = streamOptsParam
+		
 		const streamConfig = _.defaultsDeep(
 			{
 				name:
