@@ -11,6 +11,7 @@ const _ = require("lodash");
 const C = require("../constants");
 const Moleculer = require("moleculer");
 const { MoleculerRetryableError } = require("moleculer").Errors;
+const { api, node, tracing, resources } = require("@opentelemetry/sdk-node");
 
 let NATS;
 
@@ -510,6 +511,20 @@ class NatsAdapter extends BaseAdapter {
 
 		try {
 			// Remap headers into JetStream format
+			// Add opentelemetry current span context using the api to opts.headers
+			
+			const parentSpan = api.trace.getSpan(api.context.active());
+
+			const parentSpanCopy = {...parentSpan};
+			// @ts-ignore
+			delete parentSpanCopy._spanProcessor;
+			opts.headers = {
+				...opts.headers,
+				// @ts-ignore
+				"$parentSpanContext": stringify(parentSpanCopy),
+				};
+			
+
 			if (opts.headers) {
 				/** @type {MsgHdrs} */
 				let msgHdrs = NATS.headers();
@@ -553,3 +568,21 @@ class NatsAdapter extends BaseAdapter {
 }
 
 module.exports = NatsAdapter;
+
+
+function stringify(obj) {
+	let cache = [];
+	let str = JSON.stringify(obj, function(key, value) {
+	  if (typeof value === "object" && value !== null) {
+		if (cache.indexOf(value) !== -1) {
+		  // Circular reference found, discard key
+		  return;
+		}
+		// Store value in our collection
+		cache.push(value);
+	  }
+	  return value;
+	});
+	cache = null; // reset the cache
+	return str;
+  }
