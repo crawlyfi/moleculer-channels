@@ -698,7 +698,7 @@ module.exports = function ChannelsCrawlyfiMiddleware(mwOpts) {
 											tracing: headers.$tracing === "true",
 											level: headers.$level ? parseInt(headers.$level) : 0,
 											// Trendee
-											parentCtx : JSON.parse(headers.$parentSpanContext)
+											// parentCtx : JSON.parse(headers.$parentSpanContext)
 										};
 										caller = headers.$caller;
 									}

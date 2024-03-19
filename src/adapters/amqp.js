@@ -281,6 +281,11 @@ class AmqpAdapter extends BaseAdapter {
 		);
 
 		try {
+
+			if (chan.maxInFlight == null) {
+				chan.maxInFlight = this.opts.maxInFlight;
+			}
+
 			if (chan.maxRetries == null) chan.maxRetries = this.opts.maxRetries;
 			chan.deadLettering = _.defaultsDeep({}, chan.deadLettering, this.opts.deadLettering);
 
@@ -343,6 +348,9 @@ class AmqpAdapter extends BaseAdapter {
 			);
 			this.logger.debug(`Asserting '${queueName}' queue...`, queueOptions);
 			await this.channel.assertQueue(queueName, queueOptions);
+
+			// Trendee
+			this.channel.prefetch(chan.maxInFlight);
 
 			// --- BIND QUEUE TO EXCHANGE ---
 			this.logger.debug(`Binding '${chan.name}' -> '${queueName}'...`);
@@ -410,6 +418,18 @@ class AmqpAdapter extends BaseAdapter {
 						this.logger.debug(
 							`No retries, moving message to '${chan.deadLettering.queueName}' queue...`
 						);
+
+						// Trendee
+						// Add error to dlq
+						let content = this.serializer.deserialize(msg.content);
+						content = {
+							...content,
+							dlq: {
+								error: err.message,
+								stack: err.stack
+							}
+						}
+						msg.content = this.serializer.serialize(content);
 						await this.moveToDeadLetter(chan, msg);
 					} else {
 						// No retries, drop message
@@ -427,6 +447,17 @@ class AmqpAdapter extends BaseAdapter {
 						this.logger.debug(
 							`Message redelivered too many times (${redeliveryCount}). Moving message to '${chan.deadLettering.queueName}' queue...`
 						);
+						// Trendee
+						// Add error to dlq
+						let content = this.serializer.deserialize(msg.content);
+						content = {
+							...content,
+							dlq: {
+								error: err.message,
+								stack: err.stack
+							}
+						}
+						msg.content = this.serializer.serialize(content);
 						await this.moveToDeadLetter(chan, msg);
 					} else {
 						// Reached max retries and no dead-letter topic, drop message
@@ -436,6 +467,15 @@ class AmqpAdapter extends BaseAdapter {
 						this.channel.nack(msg, false, false);
 					}
 				} else {
+
+					// Trendee 
+					// Sleep for 30 sec
+					await new Promise((resolve) => {
+						setTimeout(() => {
+							resolve();
+						}, 30000);
+					});
+
 					// Redeliver the message directly to the queue instead of exchange
 					const queueName = `${chan.group}.${chan.name}`;
 					this.logger.warn(
